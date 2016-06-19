@@ -54,7 +54,6 @@ class RemindMe(BotPlugin):
             "message": message,
             "target": target,
             "is_user": is_user,
-            "sent": False
         }
         self.store_reminder(reminder)
         return reminder
@@ -69,16 +68,14 @@ class RemindMe(BotPlugin):
 
     def send_reminders(self):
         for reminder in self.get_all_reminders():
-            if pytz.utc.localize(datetime.now()) > reminder['date'] and not reminder['sent']:
+            if pytz.utc.localize(datetime.now()) > reminder['date']:
                 self.send(
                     self.build_identifier(reminder['target']),
                     "Hello {target}, here is your reminder: {message}".format(target=reminder['target'], message=reminder['message']),
                 )
                 all_reminders = self.get('all_reminders', {})
-                all_reminders[reminder['id']]['sent'] = True
-                self['all_reminders'] = all_reminders
-            elif reminder['sent']  == True:
                 self.remove_reminder(reminder['id'])
+                self['all_reminders'] = all_reminders
 
     @botcmd(split_args_with=' ')
     def remind_me(self, mess, args):
@@ -104,7 +101,5 @@ class RemindMe(BotPlugin):
     @botcmd(admin_only=True)
     def remind_clearall(self, mess, args):
         """WARNING: This will clear all reminders for all users and rooms!"""
-        self['user_reminders'] = {}
-        self['chatroom_reminders'] = {}
         self['all_reminders'] = {}
         return 'All reminders have been cleared.'
