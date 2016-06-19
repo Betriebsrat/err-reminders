@@ -7,8 +7,9 @@ from pytz import utc
 
 __author__ = 'kdknowlton, Betriebsrat'
 
-DEFAULT_POLL_INTERVAL = 60 * 1  # one minute
-DEFAULT_LOCALE = 'en_US' # CHANGE THIS TO YOUR LOCALE
+DEFAULT_POLL_INTERVAL = 60  # one minute
+DEFAULT_LOCALE = 'en_US'  # CHANGE THIS TO YOUR LOCALE
+
 
 class RemindMe(BotPlugin):
     min_err_version = '4.1.3'
@@ -43,43 +44,43 @@ class RemindMe(BotPlugin):
         )
 
     def store_reminder(self, reminder):
-        all_reminders = self.get('all_reminders', {})
-        all_reminders[reminder['id']] = reminder
-        self['all_reminders'] = all_reminders
+        reminders = self.get('reminders', {})
+        reminders[reminder['id']] = reminder
+        self['reminders'] = reminders
 
-    def add_reminder(self, date, message, target, is_user=True):
+    def remove_reminder(self, reminderId):
+        reminders = self['reminders']
+        del reminders[reminderId]
+        self['reminders'] = reminders
+
+    def add_reminder(self, date, nick, message, target, is_user=True):
         reminder = {
             "id": uuid.uuid4().hex,
             "date": date,
             "message": message,
             "target": target,
             "is_user": is_user,
+            "nick": nick,
         }
         self.store_reminder(reminder)
         return reminder
 
-    def remove_reminder(self, id):
-        all_reminders = self.get('all_reminders', {})
-        del all_reminders[id]
-        self['all_reminders'] = all_reminders
-
     def get_all_reminders(self):
-        return self.get('all_reminders', {}).values()
+        return self.get('reminders', {}).values()
 
     def send_reminders(self):
         for reminder in self.get_all_reminders():
             if pytz.utc.localize(datetime.now()) > reminder['date']:
                 self.send(
                     self.build_identifier(reminder['target']),
-                    "Hello {target}, here is your reminder: {message}".format(target=reminder['target'], message=reminder['message']),
+                    "{nick} , here is your reminder: {message}".format(nick=reminder['nick'],
+                                                                       message=reminder['message']),
                 )
-                all_reminders = self.get('all_reminders', {})
                 self.remove_reminder(reminder['id'])
-                self['all_reminders'] = all_reminders
 
     @botcmd(split_args_with=' ')
-    def remind_me(self, mess, args):
-        """Takes a message of the form '!remind me [when] -> [what]' and stores the reminder. Usage: !remind me <date/time> -> <thing>"""
+    def remind_me(self, msg, args):
+        """Takes a message of the form of '!remind me [when] -> [what]' and stores the reminder. Usage: !remind me <date/time> -> <thing>"""
         if "->" not in args:
             return "Usage: !remind me <date/time> -> <thing>"
 
@@ -91,9 +92,10 @@ class RemindMe(BotPlugin):
         if date_struct[1] != 0:
             date = pytz.utc.localize(datetime(*(date_struct[0])[:6]))
             message = " ".join(args[date_end + 1:])
-            is_user = mess.is_direct
-            target = str(mess.frm) if mess.is_direct else str(mess.to)
-            self.add_reminder(date, message, target, is_user)
+            is_user = msg.is_direct
+            nick = msg.frm.name
+            target = str(msg.frm) if msg.is_direct else str(msg.to)
+            self.add_reminder(date, nick, message, target, is_user)
             return "Reminder set to \"{message}\" at {date}.".format(message=message, date=date)
         else:
             return "Your date seems malformed: {date}".format(date=date_string)
@@ -101,5 +103,5 @@ class RemindMe(BotPlugin):
     @botcmd(admin_only=True)
     def remind_clearall(self, mess, args):
         """WARNING: This will clear all reminders for all users and rooms!"""
-        self['all_reminders'] = {}
+        self['reminders'] = {}
         return 'All reminders have been cleared.'

@@ -1,9 +1,9 @@
 [Core]
-Name = ReminderPlugin
+Name = reminders
 Module = reminders
 
 [Documentation]
-Description = This module allows you to tell the bot in chat to give you a reminder at some specified time.
+Description = Simple reminders for errbot.
 
 [Python]
 Version = 2+
