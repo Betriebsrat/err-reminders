@@ -5,11 +5,11 @@ ErrBot plugin to get and set scheduled reminders over chat.
 You NEED to change the locale, if you are not from germany.  
 
 Basic Usage:  
-!remind me \<when\> -> \<what\>  
+!remind me \<when\> :: \<what\>  
 
 Example:
-!remind me tomorrow 11:00 -> Cook coffee.  
-!remind me next Friday -> Party hard.
+!remind me tomorrow 11:00 :: Cook coffee.  
+!remind me next Friday :: Party hard.
 
 Example Output:  
 Hello \<nick\>, here is your reminder: \<text\>

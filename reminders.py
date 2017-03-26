@@ -78,24 +78,21 @@ class RemindMe(BotPlugin):
                 )
                 self.remove_reminder(reminder['id'])
 
-    @botcmd(split_args_with=' ')
+    @botcmd(split_args_with='::')
     def remind_me(self, msg, args):
-        """Takes a message of the form of '!remind me [when] -> [what]' and stores the reminder. Usage: !remind me <date/time> -> <thing>"""
-        if "->" not in args:
-            return "Usage: !remind me <date/time> -> <thing>"
+        """Takes a message of the form of '!remind me [when] :: [what]' and stores the reminder. Usage: !remind me <date/time> :: <thing>"""
+        if len(args) != 2:
+            return "Usage: !remind me <date/time> :: <thing>"
 
         pdt = parsedatetime.Calendar(parsedatetime.Constants(self.config['LOCALE'] if self.config else DEFAULT_LOCALE))
-        date_end = args.index('->')
-        date_list = args[:date_end]
-        date_string = " ".join(date_list)
+        date_string = args[0]
         date_struct = pdt.parse(date_string, datetime.now(utc).timetuple())
         if date_struct[1] != 0:
             date = pytz.utc.localize(datetime(*(date_struct[0])[:6]))
-            message = " ".join(args[date_end + 1:])
-            is_user = msg.is_direct
-            nick = msg.frm.name
+            message = args[1]
+            nick = msg.frm.nick
             target = str(msg.frm) if msg.is_direct else str(msg.to)
-            self.add_reminder(date, nick, message, target, is_user)
+            self.add_reminder(date, nick, message, target, msg.is_direct)
             return "Reminder set to \"{message}\" at {date}.".format(message=message, date=date)
         else:
             return "Your date seems malformed: {date}".format(date=date_string)
