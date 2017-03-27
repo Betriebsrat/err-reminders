@@ -4,7 +4,6 @@ from datetime import datetime
 import parsedatetime
 import pytz
 from errbot import BotPlugin, botcmd
-from pytz import utc
 import html
 import sys
 
@@ -56,17 +55,16 @@ class RemindMe(BotPlugin):
             return "Usage: !remind me <date/time> -> <thing>"
 
         pdt = parsedatetime.Calendar(parsedatetime.Constants(self.config['LOCALE'] if self.config else DEFAULT_LOCALE))
-        date_string = args[0]
-        date_struct = pdt.parse(date_string, datetime.now(utc).timetuple())
+        date_struct = pdt.parseDT(args[0])
         if date_struct[1] != 0:
-            date = pytz.utc.localize(datetime(*(date_struct[0])[:6]))
+            date = pytz.utc.localize(date_struct[0])
             message = args[1]
             nick = msg.frm.nick
             target = str(msg.frm) if msg.is_direct else str(msg.to)
             self.set_reminder(date, nick, message, target, msg.is_direct)
             return "Reminder set to \"{message}\" at {date}.".format(message=message, date=date)
         else:
-            return "Your date seems malformed: {date}".format(date=date_string)
+            return "Your date seems malformed: {date}".format(date=args[0])
 
     @botcmd(admin_only=True)
     def remind_clearall(self, msg, args):
